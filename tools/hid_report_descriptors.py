@@ -28,6 +28,7 @@ HID_DEVICE_DATA = {
     "DIGITIZER" : DeviceData(report_length=5, out_report_length=0, usage_page=0x0D, usage=0x02),   # Digitizers, Pen
     "XAC_COMPATIBLE_GAMEPAD" : DeviceData(report_length=3, out_report_length=0, usage_page=0x01, usage=0x05), # Generic Desktop, Game Pad
     "RAW" : DeviceData(report_length=64, out_report_length=0, usage_page=0xFFAF, usage=0xAF),      # Vendor 0xFFAF "Adafruit", 0xAF
+    "PEDALS" : DeviceData(report_length=8, out_report_length=0, usage_page=0x01, usage=0x04),     # Generic Desktop, Joystick
     }
 
 def keyboard_hid_descriptor(report_id):
@@ -189,6 +190,44 @@ def gamepad_hid_descriptor(report_id):
              0xC0,              # End Collection
             )))
 
+def pedals_hid_descriptor(report_id):
+    data = HID_DEVICE_DATA["PEDALS"]
+    return hid.ReportDescriptor(
+        description="PEDALS",
+        report_descriptor=bytes(
+            # Gamepad with 16 buttons and two joysticks
+            (0x05, data.usage_page, # Usage Page
+             0x09, data.usage,  # Usage
+             0xA1, 0x01,        # Collection (Application)
+            ) +
+            ((0x85, report_id) if report_id != 0 else ()) +
+            (
+                # /* 4 16bit Axis */
+                0x05, 0x01,# /*   USAGE_PAGE (Generic Desktop) */
+                #0xa1, 0x00,# /*   COLLECTION (Physical) */
+                0x09, 0x30,# /*     USAGE (X) */
+                0x09, 0x31,# /*     USAGE (Y) */
+                0x09, 0x32,# /*     USAGE (Z) */
+                0x09, 0x33,# /*     USAGE (Rx) */
+                0x16, 0x00, 0x80,# /*     LOGICAL_MINIMUM (-32768) */
+                0x26, 0xFF, 0x7F,# /*     LOGICAL_MAXIMUM (32767) */
+                0x75, 0x10,# /*     REPORT_SIZE (16) */
+                0x95, 0x04,# /*     REPORT_COUNT (4) */
+                0x81, 0x02,# /*     INPUT (Data,Var,Abs) */
+                0xc0,# /*   END_COLLECTION */
+                #0xc0# /* END_COLLECTION */
+                #0x09, 0x30,                    # USAGE (X)
+                #0x09, 0x31,                    # USAGE (Y)
+                #0x09, 0x32,                    # USAGE (Z)
+                #0x09, 0x35,                    # USAGE (rz)
+                #0x16, 0x00, 0x80,              # LOGICAL_MINIMUM (-32768)
+                #0x26, 0xff, 0x7f,              # LOGICAL_MAXIMUM (32767)
+                #0x75, 0x10,                    # REPORT_SIZE (16)
+                #0x95, 0x04,                    # REPORT_COUNT (4)
+                #0x81, 0x02,                    # INPUT (Data,Var,Abs)
+                #0xc0                           # END_COLLECTION
+            )))
+
 def digitizer_hid_descriptor(report_id):
     data = HID_DEVICE_DATA["DIGITIZER"]
     return hid.ReportDescriptor(
@@ -292,4 +331,5 @@ REPORT_DESCRIPTOR_FUNCTIONS = {
     "DIGITIZER" : digitizer_hid_descriptor,
     "XAC_COMPATIBLE_GAMEPAD" : xac_compatible_gamepad_hid_descriptor,
     "RAW" : raw_hid_descriptor,
+    "PEDALS" : pedals_hid_descriptor,
 }
